@@ -1,0 +1,100 @@
+---
+title: "distribution-summary"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+#set root
+knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
+
+```
+
+```{r libararies, include=FALSE}
+library(tidyverse)
+library(rnaturalearth)
+library(rnaturalearthdata)
+library(raster)
+library(rgeos)
+library(sf)
+```
+
+
+```{r data loading}
+mosquito_points <- st_read("data/interim/mosquito_points.dbf")
+```
+## Species Summary
+
+```{r}
+data <- mosquito_points %>% as.data.frame()
+
+data %>% count(species) %>% knitr::kable()
+
+```
+
+## Graphed
+
+```{r}
+data %>%
+  count(species) %>%
+  ggplot(aes(x = reorder(species, -n), y = n)) +
+  geom_col() +
+  ylab(NULL) +
+  xlab(NULL) +
+  see::theme_modern() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, 
+                                   hjust = 1, size = 8))
+
+ggsave(
+  file = "notebooks/distribution-summary/barchart.png",
+  width = 14,
+  height = 10,
+  units = "cm"
+)
+```
+
+
+
+```{r map-together}
+world <- ne_countries(scale = "medium", returnclass = "sf")
+
+world_mod <- st_transform(world, 3035)
+mosquito_mod <- st_transform(mosquito_points, 3035)
+
+ggplot(data = world_mod) +
+  geom_sf() +
+  geom_sf(data = mosquito_mod, size = 1) +
+  coord_sf(
+    xlim = c(1651007 + 100000, 7567579 + 100000),
+    ylim = c(525513.3 + 100000, 4878584 + 100000),
+    expand = FALSE
+  )
+```
+```{r single-species-maps}
+
+# list of values to loop over
+uniq_species = unique(mosquito_mod$species)
+
+# Loop
+
+for (i in uniq_species) {
+
+  temp_plot = ggplot(data = world_mod) +
+  geom_sf(fill = "bisque") +
+  geom_sf(data = subset(mosquito_mod, species == i), size = .5) +
+  coord_sf(
+    xlim = c(1651007 + 100000, 7567579 + 100000),
+    ylim = c(525513.3 + 100000, 4878584 + 100000),
+    expand = FALSE
+  ) +
+  ggtitle(paste0(i))
+
+  ggsave(temp_plot, file=paste0("notebooks/distribution-summary/plot_", tolower(str_squish(i)),".png"), width = 14, height = 10, units = "cm")
+}
+
+```
+
+
+
