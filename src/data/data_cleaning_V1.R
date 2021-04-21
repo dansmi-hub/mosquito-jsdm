@@ -102,7 +102,20 @@ spp_100 <- mosquito_points %>% group_by(species) %>% count() %>% filter(n > 100)
 mosquito_100 <- mosquito_points %>% filter(species %in% spp_100)
 
 ###########################################################################
-# rough plot --------------------------------------------------------------
+# Clean Coords ------------------------------------------------------------
+###########################################################################
+
+# 500+ records flagged
+flagged <- mosquito_100 %>% clean_coordinates(lon = "lon", lat = "lat")
+
+# Everything not flagged
+cleaned_100 <- flagged %>% filter(.summary == TRUE)
+
+# Replace mosquito data
+mosquito_100 <- cleaned_100
+
+###########################################################################
+# Rough plot --------------------------------------------------------------
 ###########################################################################
 
 library("rnaturalearth")
@@ -112,11 +125,12 @@ world <- ne_countries(scale = "medium", returnclass = "sf")
 
 mosquito_100 %>% as_tibble() %>% 
   ggplot2::ggplot(data = ., aes(x = lon, y = lat)) +
-  geom_sf(data = world, inherit.aes = F) +
-  geom_hex() +
+  geom_sf(data = world, inherit.aes = F, fill = "antiquewhite") +
+  ggpointdensity::geom_pointdensity() +
+  # geom_hex() +
   xlim(c(min(mosquito_100$lon) + 5, max(mosquito_100$lon) + 5)) +
-  ylim(c(min(mosquito_100$lat) + 5, max(mosquito_100$lat) + 5)) +
-  facet_wrap(~ species)
+  ylim(c(min(mosquito_100$lat) + 5, max(mosquito_100$lat) + 5)) + 
+  theme(panel.background = element_rect(fill = "aliceblue"))
 
 
 mosquito_points <- st_as_sf(mosquito_100, coords = c("lon", "lat"), crs = "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
