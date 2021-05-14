@@ -20,10 +20,14 @@ Project Organization
     |
     |           Docs / Reports / Notebook are all very similar. Will be organised more cleanly later. 
     |                       Though in essence they all contain reports or quick analysis.
-    ├── docs
-    ├── notebooks
-    ├── reports
+    |
+    ├── docs -- Rough compiled documents for supervisors or discussion.
+    ├── notebooks -- Anyhting generating using an RNotebook.
+    ├── reports -- So far consists of random plots and figures used in analysis and project design.
     │   └── figures
+    |
+    |           Here are all the code snippets and scripts for the project.
+    |
     └── src -- Here are where the scripts are stored.
         ├── data -- Any scripts to manage data (functions, etc).
         ├── external -- Any external scripts for the project (Code examples, etc).
