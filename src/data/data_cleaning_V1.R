@@ -1,5 +1,6 @@
 library(tidyverse)
 library(sf)
+library(CoordinateCleaner)
 
 ###########################################################################
 # get all layers from ECDC data 2019
