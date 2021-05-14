@@ -1,7 +1,7 @@
 mosquito-jsdm
 ==============================
 
-EU wide JSDM of mosquito occurence
+Generating JSDM for Mosquitoes using VectorNet data.
 
 Project Organization
 --------------------
