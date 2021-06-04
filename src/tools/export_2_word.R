@@ -1,0 +1,1 @@
+source("http://michael.hahsler.net/SMU/EMIS7332/R/copytable.R") 

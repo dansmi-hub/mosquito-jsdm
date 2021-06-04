@@ -1,0 +1,10 @@
+SpeciesName Absent Present Unknown
+Aedes albopictus 1449 5701 1
+Aedes cantans NA 14 NA
+Aedes caspius 34 1279 NA
+Aedes detritus 2 70 NA
+Aedes dorsalis NA 1 NA
+Aedes japonicus 483 6156 NA
+Culex modestus 179 237 NA
+Culex pipiens 661 4476 4
+Culiseta annulata 5 1344 NA

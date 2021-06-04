@@ -1,0 +1,7 @@
+SpeciesName Absent Present Unknown
+Aedes albopictus 1449 5701 1
+Aedes caspius 34 1279 NA
+Aedes detritus 2 70 NA
+Aedes japonicus 483 6156 NA
+Culex pipiens 661 4476 4
+Culex theileri 39 510 NA

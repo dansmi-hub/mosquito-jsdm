@@ -89,7 +89,7 @@ raster2shape <- function(raster) {
 
 # Methods -----------------------------------------------------------------
 
-# load in mosquito points fiel
+# load in mosquito points field
 mosquito_points <- st_read("data/interim/mosquito_points.shp")
 
 # Get log and count values for 20, 15, 10 and 5km density
