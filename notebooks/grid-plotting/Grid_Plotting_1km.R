@@ -76,7 +76,7 @@ spp_names <- present$SpeciesName
 
 ## -----------------------------------------------------------------------------
 # The presence absence object from letsR:
-plot(presence_raster)
+# plot(presence_raster)
 
 ## -----------------------------------------------------------------------------
 # Now plot many different resolutions of these rasters
