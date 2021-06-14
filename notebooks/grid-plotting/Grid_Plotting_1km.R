@@ -64,14 +64,15 @@ spp_names <- present$SpeciesName
 
 ## -----------------------------------------------------------------------------
 # the function from letsR that does this:
-presence_raster <- lets.presab.points(xy, spp_names,
-  # 50 Km resolution - a 1km resolution requires 60GB of RAM
-  # Will offload to cluster when this is needed 
-  resol = 50000,
-  xmn = 476139.3, xmx = 5982555,
-  ymn = 1600838, ymx = 7572415,
-  crs = crs(mosquito_km)
-)
+#
+# presence_raster <- lets.presab.points(xy, spp_names,
+#   # 50 Km resolution - a 1km resolution requires 60GB of RAM
+#   # Will offload to cluster when this is needed 
+#   resol = 50000,
+#   xmn = 476139.3, xmx = 5982555,
+#   ymn = 1600838, ymx = 7572415,
+#   crs = crs(mosquito_km)
+# )
 
 ## -----------------------------------------------------------------------------
 # The presence absence object from letsR:
@@ -91,6 +92,9 @@ presence_raster = list()
 
 for (i in seq_along(resolutions)) {
   
+  # Print for progress
+  print(sprintf("Working on %skm resolution", resolutions))
+  
   # the function from letsR that does this:
   presence_raster[[i]] <- lets.presab.points(xy, spp_names,
                                         # 50 Km resolution - a 1km resolution requires 60GB of RAM
@@ -102,6 +106,11 @@ for (i in seq_along(resolutions)) {
                                         crs = crs(mosquito_km)
   )
   
+  # Save presence matrix
+  write_rds(presence_raster[[i]]$Presence_and_Absence_Matrix, compress = "xz",
+            file = sprintf("notebooks/grid-plotting/community_matrix_%skm.rds", resolutions[i]))
+  
+  # Name lists
   names(presence_raster[i]) = sprintf("presenceraster_%skm", resolutions[i])
   
   # Write to a file as well - named 
@@ -109,6 +118,9 @@ for (i in seq_along(resolutions)) {
               filename = sprintf("data/interim/presenceraster_%skm_EPSG3035.nc", resolutions[i]))
   
 }
+
+
+
 
 
 ## -----------------------------------------------------------------------------
