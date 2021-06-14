@@ -93,7 +93,7 @@ presence_raster = list()
 for (i in seq_along(resolutions)) {
   
   # Print for progress
-  print(sprintf("Working on %skm resolution", resolutions))
+  print(sprintf("Working on %skm resolution", resolutions[i]))
   
   # the function from letsR that does this:
   presence_raster[[i]] <- lets.presab.points(xy, spp_names,
