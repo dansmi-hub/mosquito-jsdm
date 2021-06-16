@@ -107,8 +107,8 @@ for (i in seq_along(resolutions)) {
   )
   
   # Save presence matrix
-  write_rds(presence_raster[[i]]$Presence_and_Absence_Matrix, compress = "xz",
-            file = sprintf("notebooks/grid-plotting/community_matrix_%skm.rds", resolutions[i]))
+ # write_rds(presence_raster[[i]]$Presence_and_Absence_Matrix, compress = "xz",
+ #           file = sprintf("notebooks/grid-plotting/community_matrix_%skm.rds", resolutions[i]))
   
   # Name lists
   names(presence_raster[i]) = sprintf("presenceraster_%skm", resolutions[i])
@@ -223,4 +223,7 @@ long_freq_scale %>%
   geom_col(position = "dodge") +
   facet_wrap("scale") +
   xlab("Species Density")
+
+# Save me!
+save.image(compress = "xz", file = "notebooks/grid-plotting/grid-plotting.RData")
 
