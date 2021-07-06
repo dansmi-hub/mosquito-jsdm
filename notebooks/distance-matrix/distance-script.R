@@ -19,6 +19,7 @@ raster_10km <- raster("data/interim/presenceraster_10km_EPSG3035.nc")
 
 # Raw data
 raw <- read_sf("data/interim/all_points.nc")
+raw <- st_crs(3035)
 raw <- st_transform(raw, 3035)
 
 # Over 100 Presences per species only and Only Presences
