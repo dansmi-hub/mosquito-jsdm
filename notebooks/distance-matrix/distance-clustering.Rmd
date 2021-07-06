@@ -1,0 +1,212 @@
+---
+title: "distance_work"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
+```
+
+```{r}
+library(tidyverse)
+library(sf)
+library(raster)
+library(spatstat)
+```
+
+## Data
+
+```{r}
+## Rasters
+
+# 2km, 5km, 10km
+raster_2km <- raster("data/interim/presenceraster_2km_EPSG3035.nc")
+raster_5km <- raster("data/interim/presenceraster_5km_EPSG3035.nc")
+raster_10km <- raster("data/interim/presenceraster_10km_EPSG3035.nc")
+```
+
+
+```{r}
+# Simple Morans using queens case weighting
+# Queens Case Morans
+M_2km <- Moran(raster_2km, w=matrix(c(1,1,1,1,0,1,1,1,1), 3,3))
+M_5km <- Moran(raster_5km, w=matrix(c(1,1,1,1,0,1,1,1,1), 3,3))
+M_10km <- Moran(raster_10km, w=matrix(c(1,1,1,1,0,1,1,1,1), 3,3))
+
+# Spatial correlation 
+# Increasing grid size increases spatial autocorrelation. 
+# Though 0.25 doesn't seem that much?
+
+# 2km: 0.09526147
+# 5km: 0.1675565
+# 10km: 0.259602
+```
+
+```{r}
+## Points
+
+# Raw data
+raw <- read_sf("data/interim/all_points.nc")
+raw <- st_transform(raw, 3035)
+
+# Over 100 Presences per species only and Only Presences
+raw <- raw %>% 
+  filter(DistributionStatus == "Present") %>% 
+  group_by(SpeciesName) %>% filter(n() >= 100) %>% 
+  ungroup()
+```
+
+```{r}
+# Morans I for the points (All species)
+
+# Data set is very large so need a memory efficent way of calculating this
+# install_github('mcooper/moranfast')
+
+library(moranfast)
+xy <- st_coordinates(raw)
+bound <- cbind(raw, xy)
+bound$id <- 1:nrow(bound)
+
+# Queens matrix weighted?
+M_all_points <- moranfast(bound$id, bound$X, bound$Y)
+
+# 0.24 coefficient. So samples are positively correlated but not greatly so.
+# Very similar to the 10km resolution. So we are increasing correlation slightly
+# when grid to 10km. but reducing when species are sampled in grids at 2-5km.
+M_all_points
+```
+
+
+```{r}
+# Distance to all other points for all species
+
+# This can be very-very memory intensive so we have to make 
+# do with nearest neighbor analysis
+
+
+# Function to measure spatial distances between all points and plot
+# Will it run?
+
+spatial_dist <- function(x) {
+  
+  distmat <- st_distance(x)
+  
+  vec_dist <- as.vector(t(distmat)[lower.tri(t(distmat))])
+  
+  return(vec_dist)
+  
+  # # hist(vec_dist)
+  # 
+  # p = 
+  #   ggplot() + 
+  #   geom_histogram(aes(vec_dist)) +
+  #   geom_vline(xintercept = 2000, col = "red") +
+  #   geom_vline(xintercept = 5000, col = "orange") +
+  #   geom_vline(xintercept = 100000, col = "pink") +
+  #   ggtitle(
+  #     
+  #     ifelse(
+  #     
+  #     length(unique(x$SpeciesName)) != 1,
+  #     
+  #     "All Species",
+  #     
+  #     paste(x$SpeciesName))
+  #   )
+  #   
+  #   
+  # 
+  # # qplot(vec_dist, geom = "auto")
+  # 
+  # return(p)
+  
+}
+
+
+raw_dist <- spatial_dist(sample_n(raw, 10000))
+
+```
+
+
+```{r}
+
+
+## Maybe no longer needed for this workflow?
+
+
+# # Turning raster into polygons for each resolution - then we will do distance
+# # from centre of each polygon to get a new distance matrix.
+# library(inlmisc)
+# 
+# # Convert any raster file to a shapefile; easy plotting in ggplot ----
+# raster2shape <- function(raster) {
+#   shp <- Grid2Polygons(raster)
+#   shp <- st_as_sf(shp)
+#   # Do we need to do this? Is CRS inherited through this func?
+#   # shp <- st_transform(shp, crs = crs)
+#   return(shp)
+# }
+
+```
+
+```{r}
+
+shp_10km <- rasterToPolygons(raster_10km) %>% st_as_sf()
+shp_5km <- rasterToPolygons(raster_5km) %>% st_as_sf()
+# too much memory needed 
+# shp_2km <- rasterToPolygons(raster_2km) %>% st_as_sf()
+
+```
+
+```{r}
+gridded_dist <- function(shape) as.vector(st_distance(filter(shape, layer != 0)))
+ 
+dist_10km <- gridded_dist(shp_10km)
+dist_5km <- gridded_dist(shp_5km)
+
+```
+
+```{r}
+
+df1 = data_frame(Distance = raw_dist, Type = rep("Raw", times = length(raw_dist)))
+df2 = data_frame(Distance = dist_10km, Type = rep("10km", times = length(dist_10km)))
+df3 = data_frame(Distance = dist_5km, Type = rep("5km", times = length(dist_5km)))
+
+data_distances <- bind_rows(df1, df2, df3)
+
+
+p = data_distances %>% 
+  ggplot(alpha = 0.3) +
+  ggridges::geom_density_ridges(aes(x = Distance, y = Type, fill = Type), alpha = 0.3) + 
+  ylab("Freq")
+
+ggsave(p, filename = "hist.png")
+
+
+```
+
+```{r}
+
+nn_10km <- as.ppp(shp_10km %>% filter(layer != 0) %>% st_centroid()) %>% nndist(k = 1)
+nn_5km <- as.ppp(shp_5km %>% filter(layer != 0) %>% st_centroid()) %>% nndist(k = 1)
+nn_raw <- as.ppp(raw) %>% nndist(k = 1)
+
+df_nn1 <- data_frame(Distance = nn_10km, Type = rep("10km", times = length(nn_10km)))
+df_nn2 <- data_frame(Distance = nn_5km, Type = rep("5km", times = length(nn_5km)))
+df_nn3 <- data_frame(Distance = nn_raw, Type = rep("Raw", times = length(nn_raw)))
+
+data_nn <- bind_rows(df_nn1, df_nn2, df_nn3)
+
+p = data_nn %>% group_by(Type) %>% 
+  slice_min(Distance, prop = 0.25) %>% filter(Distance != 0) %>% 
+  #Lets not consider the upper 25% of recordings?
+  ggplot(alpha = 0.3) +
+  geom_boxplot(aes(x = Distance, y = Type, fill = Type), alpha = 0.3) + 
+  ylab("Freq")
+
+
+plot(p)
+
+```
+
