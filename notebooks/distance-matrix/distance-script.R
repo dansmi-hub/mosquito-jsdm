@@ -109,8 +109,9 @@ distance_names = c(
 # need to do some fancy dplyr and purr to keep it efficent (50 mill vals)
 
 distances_df = 
-  map(distnaces_m, as_tibble_col, column_name = "Dist") %>% 
-  map2_df(distance_names, ~ mutate(.x, Type = .y)) %>% 
+  map(distnaces_m, as_tibble) %>% 
+  map2_df(distance_names, ~ mutate(.x, Type = .y)) %>%
+  mutate(Dist = as.integer(name)) %>%
   bind_rows()
 
 
@@ -165,9 +166,9 @@ ppp_nn(sample_n(raw, 100), k = 1)
 
 # Create DF
 nn_df = 
-  map(nn_list, as_tibble_col, column_name = "KNN") %>% 
+  map(nn_list, as_tibble) %>% 
   map2_df(distance_names, ~ mutate(.x, Type = .y)) %>% 
-  mutate(KNN = as.integer(KNN)) %>% 
+  mutate(KNN = as.integer(name)) %>% 
   bind_rows()
 
 
