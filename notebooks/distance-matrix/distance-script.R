@@ -15,6 +15,19 @@ raster_2km <- raster("data/interim/presenceraster_2km_EPSG3035.nc")
 raster_5km <- raster("data/interim/presenceraster_5km_EPSG3035.nc")
 raster_10km <- raster("data/interim/presenceraster_10km_EPSG3035.nc")
 
+# raster_2km <- raster(ncol = 300, nrow = 300)
+# raster_2km = setValues(raster_2km, runif(ncell(raster_2km)))
+# crs(raster_2km) = 3035
+# 
+# raster_5km <- raster(ncol = 200, nrow = 200)
+# raster_5km = setValues(raster_5km, runif(ncell(raster_5km)))
+# crs(raster_5km) = 3035
+# 
+# raster_10km <- raster(ncol = 100, nrow = 100)
+# raster_10km = raster::setValues(raster_10km, runif(ncell(raster_10km)))
+# crs(raster_10km) = 3035
+
+
 ## Points
 
 # Raw data
@@ -27,6 +40,11 @@ raw <- raw %>%
   filter(DistributionStatus == "Present") %>% 
   group_by(SpeciesName) %>% filter(n() >= 100) %>% 
   ungroup()
+
+
+
+#######
+raw = sample_n(raw, 200)
 
 # Morans I ----------------------------------------------------------------
 
@@ -95,6 +113,8 @@ list_distances = list(
   raster_2km
   )
   
+
+distnaces_m = parallel::mclapply(list_distances, spatial_dist, mc.cores = 4)
 distnaces_m = lapply(list_distances, spatial_dist)
 
 
@@ -139,9 +159,13 @@ p_distances_ridge =
 ppp_nn = function(x, k) {
   
   if (inherits(x, "RasterLayer")) {
-    poly = st_as_sf(rasterToPolygons(x))
-    ppp_centroids = as.ppp(st_centroid(filter(poly, layer != 0)))
-    nn = nndist(ppp_centroids, k = k)
+    # poly = st_as_sf(rasterToPolygons(x))
+    # ppp_centroids = as.ppp(st_centroid(filter(poly, layer != 0)))
+    # nn = nndist(ppp_centroids, k = k)
+    # return(nn)
+    poly = st_as_sf(rasterToPoints(x, fun = function(x){x!=0}, spatial = TRUE))
+    ppp_centroids = as.ppp(poly)
+    nn = nndist(ppp_centroids, k = 1)
     return(nn)
   }
   
@@ -157,18 +181,34 @@ ppp_nn = function(x, k) {
 }
 
 
+##
+nn = list()
+
+ppp_points = as.ppp(raw)
+nn[[1]] = nndist(ppp_points, k = 1)
+
+poly = st_as_sf(rasterToPoints(raster_10km, fun = function(x){x!=0}, spatial = TRUE))
+ppp_centroids = as.ppp(poly)
+nn[[2]] = nndist(ppp_centroids, k = 1)
+
+poly = st_as_sf(rasterToPoints(raster_5km, fun = function(x){x!=0}, spatial = TRUE))
+ppp_centroids = as.ppp(poly)
+nn[[3]] = nndist(ppp_centroids, k = 1)
+
+poly = st_as_sf(rasterToPoints(raster_2km, fun = function(x){x!=0}, spatial = TRUE))
+ppp_centroids = as.ppp(poly)
+nn[[4]] = nndist(ppp_centroids, k = 1)
+
 # Apply over all our layers 
-nn_list = lapply(list_distances, ppp_nn, k = 1)
+# nn_list = lapply(list_distances, ppp_nn, k = 1)
 
-
-
-ppp_nn(sample_n(raw, 100), k = 1)
+nn_list = nn
 
 # Create DF
 nn_df = 
   map(nn_list, as_tibble) %>% 
   map2_df(distance_names, ~ mutate(.x, Type = .y)) %>% 
-  mutate(KNN = as.integer(name)) %>% 
+  rename(KNN = value) %>% 
   bind_rows()
 
 
